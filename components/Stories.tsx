@@ -10,7 +10,7 @@ type Suggestion = {
 function Stories() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   useEffect(() => {
-    const suggestions = [...Array(10)].map((_, i) => ({
+    const suggestions = [...Array(20)].map((_, i) => ({
       ...faker.helpers.contextualCard(),
       id: i,
     }))
@@ -19,7 +19,7 @@ function Stories() {
   }, [])
 
   return (
-    <div className="mt-8 flex space-x-2 overflow-x-scroll rounded-sm border border-gray-200 bg-white p-6">
+    <div className="mt-8 flex space-x-2 overflow-x-scroll rounded-sm border border-gray-200 bg-white p-6 scrollbar-thin">
       {suggestions.map((profile) => (
         <Story
           key={profile.id}
