@@ -4,11 +4,18 @@ import { modalState } from '../atoms/modalAtom'
 import { Dialog, Transition } from '@headlessui/react'
 import { CameraIcon } from '@heroicons/react/outline'
 import { db, storage } from '../firebase'
-import { addDoc, collection } from '@firebase/firestore'
+import {
+  addDoc,
+  collection,
+  doc,
+  serverTimestamp,
+  updateDoc,
+} from '@firebase/firestore'
 import { useSession } from 'next-auth/react'
+import { ref, getDownloadURL, uploadString } from 'firebase/storage'
 
 function Modal() {
-  const {data: session } = useSession()
+  const { data: session } = useSession()
   const [open, setOpen] = useRecoilState(modalState)
   const filePickerRef = useRef(null)
   const captionRef = useRef(null)
@@ -20,14 +27,40 @@ function Modal() {
 
     setLoading(true)
 
+    console.log({
+      username: session?.user?.username,
+      caption: captionRef?.current?.value,
+      profileImg: session?.user?.image,
+      timestamp: serverTimestamp(),
+    })
+
     // 1) Create a post and add to firestore 'posts' collection
     // 2) Get the post ID for the newly created post
     // 3) Upload the image to firebase storage and with the post ID
     // 4) Get a download URL from firebase storage and update the original post with image
 
     const docRef = await addDoc(collection(db, 'posts'), {
-      username: 
+      username: session?.user?.username,
+      caption: captionRef?.current?.value,
+      profileImg: session?.user?.image,
+      timestamp: serverTimestamp(),
     })
+
+    console.log('New doc added by ID', docRef.id)
+
+    const imageRef = ref(storage, `posts/${docRef.id}image`)
+
+    await uploadString(imageRef, selectedFile, 'data_url').then(
+      async (snapshot) => {
+        const downloadURL = await getDownloadURL(imageRef)
+        await updateDoc(doc(db, 'posts', docRef.id), {
+          image: downloadURL,
+        })
+      }
+    )
+    setOpen(false)
+    setLoading(false)
+    setSelectedFile(null)
   }
 
   const addImageToPost = (e) => {
@@ -118,7 +151,7 @@ function Modal() {
                       <input
                         className="w-full border-none text-center focus:ring-0"
                         type="text"
-                        // ref={captionRef}
+                        ref={captionRef}
                         placeholder="Please enter a caption..."
                       />
                     </div>
@@ -128,8 +161,9 @@ function Modal() {
                   <button
                     type="button"
                     className="focus-ring-offset-2 inline-flex w-full justify-center rounded-md border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:bg-gray-300 hover:disabled:bg-gray-300 sm:text-sm"
+                    onClick={uploadPost}
                   >
-                    Upload Post
+                    {loading ? 'Uploading...' : 'Upload Post'}
                   </button>
                 </div>
               </div>
