@@ -19,15 +19,37 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  Timestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import Moment from 'react-moment'
 
-function Post({ id, username, userImg, img, caption }) {
+interface PostProps {
+  id: string
+  username: string
+  userImg: string
+  img: string
+  caption: string
+}
+
+interface Comment {
+  id: string
+  comment: string
+  username: string
+  userImage: string
+  timestamp: Timestamp
+}
+
+interface Like {
+  id: string
+  username: string
+}
+
+function Post({ id, username, userImg, img, caption }: PostProps) {
   const { data: session } = useSession()
   const [comment, setComment] = useState('')
-  const [comments, setComments] = useState([])
-  const [likes, setLikes] = useState([])
+  const [comments, setComments] = useState<Array<Comment>>([])
+  const [likes, setLikes] = useState<Array<Like>>([])
   const [hasLiked, setHasLiked] = useState(false)
 
   useEffect(
@@ -37,7 +59,16 @@ function Post({ id, username, userImg, img, caption }) {
           collection(db, 'posts', id, 'comments'),
           orderBy('timestamp', 'desc')
         ),
-        (snapshot) => setComments(snapshot.docs)
+        (snapshot) =>
+          setComments(
+            snapshot.docs.map(
+              (x) =>
+                ({
+                  id: x.id,
+                  ...x.data(),
+                } as Comment)
+            )
+          )
       ),
     [db, id]
   )
@@ -45,7 +76,15 @@ function Post({ id, username, userImg, img, caption }) {
   useEffect(
     () =>
       onSnapshot(collection(db, 'posts', id, 'likes'), (snapshot) =>
-        setLikes(snapshot.docs)
+        setLikes(
+          snapshot.docs.map(
+            (x) =>
+              ({
+                id: x.id,
+                ...x.data(),
+              } as Like)
+          )
+        )
       ),
     [db, id]
   )
@@ -53,22 +92,22 @@ function Post({ id, username, userImg, img, caption }) {
   useEffect(
     () =>
       setHasLiked(
-        likes.findIndex((like) => like.id === session?.user?.uid) !== -1
+        likes.findIndex((like) => like.id === session?.user.uid) !== -1
       ),
     [likes]
   )
 
   const likePost = async () => {
     if (hasLiked) {
-      await deleteDoc(doc(db, 'posts', id, 'likes', session?.user?.uid))
+      await deleteDoc(doc(db, 'posts', id, 'likes', session?.user.uid!))
     } else {
-      await setDoc(doc(db, 'posts', id, 'likes', session.user.uid), {
-        username: session.user.username,
+      await setDoc(doc(db, 'posts', id, 'likes', session?.user.uid!), {
+        username: session?.user.username,
       })
     }
   }
 
-  const sendComment = async (e) => {
+  const sendComment = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
 
     const commentToSend = comment
@@ -76,13 +115,12 @@ function Post({ id, username, userImg, img, caption }) {
 
     await addDoc(collection(db, 'posts', id, 'comments'), {
       comment: commentToSend,
-      username: session.user.username,
-      userImage: session.user.image,
+      username: session?.user.username,
+      userImage: session?.user.image,
       timestamp: serverTimestamp(),
     })
   }
 
-  console.log(comments)
   return (
     <div className="my-7 rounded-sm border bg-white ">
       {/* Header */}
@@ -134,15 +172,15 @@ function Post({ id, username, userImg, img, caption }) {
             <div key={comment.id} className="mb-3 flex items-center space-x-2">
               <img
                 className="h-7 rounded-full"
-                src={comment.data().userImage}
+                src={comment.userImage}
                 alt=""
               />
               <p className="flex-1 text-sm ">
-                <span className="font-bold">{comment.data().username}</span>{' '}
-                {comment.data().comment}
+                <span className="font-bold">{comment.username}</span>{' '}
+                {comment.comment}
               </p>
               <Moment fromNow className="pr-5 text-sm">
-                {comment.data().timestamp?.toDate()}
+                {comment.timestamp?.toDate()}
               </Moment>
             </div>
           ))}
