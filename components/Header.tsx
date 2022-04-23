@@ -79,15 +79,15 @@ function Header() {
               <HeartIcon className="navBtn" />
 
               <img
-                onClick={signOut}
-                src={session.user.image}
+                onClick={() => signOut()}
+                src={session.user?.image}
                 alt="profile picture"
                 className="h-10 w-10 
                 cursor-pointer rounded-full"
               />
             </>
           ) : (
-            <button onClick={signIn}>SignIn</button>
+            <button onClick={() => signIn()}>SignIn</button>
           )}
         </div>
       </div>
