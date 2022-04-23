@@ -17,10 +17,10 @@ import { ref, getDownloadURL, uploadString } from 'firebase/storage'
 function Modal() {
   const { data: session } = useSession()
   const [open, setOpen] = useRecoilState(modalState)
-  const filePickerRef = useRef(null)
-  const captionRef = useRef(null)
+  const filePickerRef = useRef<HTMLInputElement>(null)
+  const captionRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
-  const [selectedFile, setSelectedFile] = useState(null)
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
 
   const uploadPost = async () => {
     if (loading) return
@@ -50,7 +50,7 @@ function Modal() {
 
     const imageRef = ref(storage, `posts/${docRef.id}image`)
 
-    await uploadString(imageRef, selectedFile, 'data_url').then(
+    await uploadString(imageRef, selectedFile!, 'data_url').then(
       async (snapshot) => {
         const downloadURL = await getDownloadURL(imageRef)
         await updateDoc(doc(db, 'posts', docRef.id), {
@@ -63,14 +63,15 @@ function Modal() {
     setSelectedFile(null)
   }
 
-  const addImageToPost = (e) => {
+  const addImageToPost = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
     const reader = new FileReader()
     if (e.target.files[0]) {
       reader.readAsDataURL(e.target.files[0])
     }
 
     reader.onload = (readerEvent) => {
-      setSelectedFile(readerEvent.target.result)
+      setSelectedFile(readerEvent.target?.result as string)
     }
   }
   return (
@@ -121,7 +122,7 @@ function Modal() {
                   />
                 ) : (
                   <div
-                    onClick={() => filePickerRef.current.click()}
+                    onClick={() => filePickerRef.current?.click()}
                     className="mx-auto flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-red-100"
                   >
                     <CameraIcon
