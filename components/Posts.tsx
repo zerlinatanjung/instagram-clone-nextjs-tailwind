@@ -1,36 +1,34 @@
-import React from 'react'
+import { collection, onSnapshot, orderBy, query } from 'firebase/firestore'
+import React, { useEffect, useState } from 'react'
+import { Snapshot } from 'recoil'
+import { db } from '../firebase'
 import Post from './Post'
 
-const posts = [
-  {
-    id: '123',
-    username: 'zerlinatanjung',
-    userImg:
-      'https://scontent.fbdo2-1.fna.fbcdn.net/v/t39.30808-6/272868296_2553996868073503_7533612638628071323_n.jpg?_nc_cat=108&ccb=1-5&_nc_sid=09cbfe&_nc_ohc=Bau7iezywHgAX-2WxiN&_nc_ht=scontent.fbdo2-1.fna&oh=00_AT8PG6b21ogkMcFsvTGDy2u2FjtD9rrA-3caxTl6bWjKCw&oe=62612CE6',
-    img: 'https://scontent.fbdo2-1.fna.fbcdn.net/v/t39.30808-6/272868296_2553996868073503_7533612638628071323_n.jpg?_nc_cat=108&ccb=1-5&_nc_sid=09cbfe&_nc_ohc=Bau7iezywHgAX-2WxiN&_nc_ht=scontent.fbdo2-1.fna&oh=00_AT8PG6b21ogkMcFsvTGDy2u2FjtD9rrA-3caxTl6bWjKCw&oe=62612CE6',
-    caption: 'SUBSCRIBE AND DESTROY THE LIKE BUTTON for the YT algorithm!',
-  },
-  {
-    id: '123',
-    username: 'zerlinatanjung',
-    userImg:
-      'https://scontent.fbdo2-1.fna.fbcdn.net/v/t39.30808-6/272868296_2553996868073503_7533612638628071323_n.jpg?_nc_cat=108&ccb=1-5&_nc_sid=09cbfe&_nc_ohc=Bau7iezywHgAX-2WxiN&_nc_ht=scontent.fbdo2-1.fna&oh=00_AT8PG6b21ogkMcFsvTGDy2u2FjtD9rrA-3caxTl6bWjKCw&oe=62612CE6',
-    img: 'https://scontent.fbdo2-1.fna.fbcdn.net/v/t39.30808-6/272868296_2553996868073503_7533612638628071323_n.jpg?_nc_cat=108&ccb=1-5&_nc_sid=09cbfe&_nc_ohc=Bau7iezywHgAX-2WxiN&_nc_ht=scontent.fbdo2-1.fna&oh=00_AT8PG6b21ogkMcFsvTGDy2u2FjtD9rrA-3caxTl6bWjKCw&oe=62612CE6',
-    caption: 'SUBSCRIBE AND DESTROY THE LIKE BUTTON for the YT algorithm!',
-  },
-]
-
 function Posts() {
+  const [posts, setPosts] = useState([])
+
+  useEffect(
+    () =>
+      onSnapshot(
+        query(collection(db, 'posts'), orderBy('timestamp', 'desc')),
+        (snapshot) => {
+          console.log('Snapshot', snapshot)
+          setPosts(snapshot.docs)
+        }
+      ),
+    [db]
+  )
+
   return (
     <div>
       {posts.map((post) => (
         <Post
           key={post.id}
           id={post.id}
-          username={post.username}
-          userImg={post.userImg}
-          img={post.img}
-          caption={post.caption}
+          username={post.data().username}
+          userImg={post.data().profileImg}
+          img={post.data().image}
+          caption={post.data().caption}
         />
       ))}
     </div>
